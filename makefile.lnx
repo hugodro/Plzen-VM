@@ -1,0 +1,29 @@
+#/************************************************
+#* File: makefile.
+#* Desc: Building definitions for the Plzen Common Components
+
+
+include $(AKRAPROJ)/geneMake.lnx
+
+subdirs= Core Spec
+
+.phony:
+
+
+all: $(subdirs)
+
+
+Core: .phony
+	cd $@ && $(MAKE)
+
+
+Spec: .phony
+	cd $@ && $(MAKE)
+
+
+clean:
+	@for i in $(subdirs); do ( \
+	    cd $$i && $(MAKE) clean \
+	) \
+	|| exit 1; done
+

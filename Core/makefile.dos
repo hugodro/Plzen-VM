@@ -1,0 +1,99 @@
+#/************************************************
+#* File: makefile.
+#* Desc: Building definitions for the Plzen RunTime.
+
+PROJECT= VM
+ARCHITECTURE= dos_i386
+SHORTOBJPATH= ../objs_dos
+# Plzen level 1 is implied (Java).
+# level 2 is FSM.
+# level 3 is SQL.
+# level 2_2 is Real-Time (needs 2 to work).
+PLZEN_LEVELS= -DPLZEN_LEVEL_2 
+
+ARCHDEP_SRCS= dosDynLib.cc
+ARCHDEP_OBJS= dosDynLib.o
+ARCHPATH= $(PLZENHOME)/bins/$(ARCHITECTURE)/$(PROJECT)
+
+VPATH= ../objs_dos
+
+# If the 'USE_FCT_MACHINE' flag is on, these must be defined.
+#FCT_MACHINE_SRCS= machine2.cc instrMethods.cc
+#FCT_MACHINE_BIN= machine2.o instrMethods.o
+
+
+SRCS= classFileObject.cc constantPool.cc \
+		classAttributes.cc classFile.cc jmachine.cc \
+		runOptions.cc filePath.cc jvcup.cc \
+		classManager.cc stacks.cc execFrame.cc \
+		machineSupport.cc synchro.cc poolManager.cc \
+		jvInstance.cc instructions.cc debugInfo.cc \
+		dynamicLibrary.cc $(ARCHDEP_SRCS) \
+		dualWorld.cc knownDuals.cc \
+		threadManager.cc rawThreads.cc jvThread.cc \
+		stringSupport.cc cmLoadLib.cc \
+		$(FCT_MACHINE_SRCS) \
+		fsmThread.cc fsmSupport.cc fsMachine.cc \
+		stateInstance.cc eventQueue.cc \
+		stateFrame.cc zipStream.cc math64bits.cc \
+		runInfo.cc \
+		$(GUIDEP_SRCS) test.cc
+
+RTOBJS= classFileObject.o constantPool.o \
+		classAttributes.o classFile.o jmachine.o \
+		runOptions.o filePath.o jvcup.o \
+		classManager.o stacks.o execFrame.o \
+		machineSupport.o synchro.o poolManager.o \
+		jvInstance.o instructions.o debugInfo.o \
+		dynamicLibrary.o \
+		dualWorld.o knownDuals.o \
+		threadManager.o rawThreads.o jvThread.o \
+		stringSupport.o cmLoadLib.o \
+		fsmThread.o fsmSupport.o fsMachine.o \
+		stateInstance.o eventQueue.o \
+		stateFrame.o zipStream.o math64bits.o \
+		runInfo.o \
+		$(FCT_MACHINE_BIN) \
+		$(ARCHDEP_OBJS) \
+		$(GUIDEP_OBJS)
+
+OBJS= $(RTOBJS) test.o 
+
+
+#INC= -I$(AKRAHOME) -I/usr/i386-go32/include -I/usr/include/g++ -I/usr/include
+INC= -I$(PLZENHOME)/include
+
+# Linker Options:
+LIBS= -lDynLoad
+# AppKit lib flags libs: -ObjC++  -u libsys_s -u libNeXT_s -all_load
+LDFLAGS= -L$(PLZENHOME)/bins/$(ARCHITECTURE)/DynLib
+#
+# Compiler Options: 
+# Use machine2 (fct table): -DUSE_FCT_MACHINE
+# Threading: -DNeXT_Thread
+# Debugs: -DDBGLEVEL_1 -DDBGLEVEL_2 -DDBGLEVEL_3 -DDBGLEVEL_MATH -DDEBUG_MEMORY
+DEBUG_LEVELS= -DDBGLEVEL_1 -DDBGLEVEL_3
+# DOS flags:  -D__extension__=''
+CFLAGS= -g $(PLZEN_LEVELS) $(DEBUG_LEVELS)
+#CC= cc
+CC= g++-go32
+.SUFFIXES: .cc
+all: plzen
+
+lib: libPlzen.a
+
+plzen: $(OBJS)
+	(cd $(SHORTOBJPATH) && \
+	$(CC) $(INC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LIBS) \
+	)
+
+libPlzen.a: $(RTOBJS) fakeSymbols.o
+	ar cru $(SHORTOBJPATH)/$@ $(RTOBJS)
+	ranlib $(SHORTOBJPATH)/$@
+
+.c.o:
+	$(CC) $(CFLAGS) -o $(ARCHPATH)/$@ -c  $<
+
+.cc.o:
+	$(CC) $(INC) $(CFLAGS) -o $(ARCHPATH)/$@ -c  $<
+

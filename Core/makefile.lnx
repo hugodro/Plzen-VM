@@ -1,0 +1,103 @@
+#/************************************************
+#* File: makefile.
+#* Desc: Building definitions for the Plzen RunTime.
+
+PROJECT= PlzVM
+
+include $(AKRAPROJ)/geneMake.lnx
+
+
+# Plzen level 1 is implied (Java).
+# level 2 is FSM.
+# level 3 is SQL.
+# level 2_2 is Real-Time (needs 2 to work).
+PLZEN_LEVELS= -DPLZEN_LEVEL_2 
+
+# If the 'USE_FCT_MACHINE' flag is on, these must be defined.
+#FCT_MACHINE_SRCS= machine2.cpp instrMethods.cpp
+#FCT_MACHINE_BIN= machine2.o instrMethods.o
+
+
+CORESRCS= constantPool.cpp \
+	classAttributes.cpp \
+	classFile.cpp \
+	classManager.cpp \
+	cmLoadLib.cpp \
+	debugInfo.cpp \
+	dualWorld.cpp \
+	dynamicLibrary.cpp \
+	exceptions.cpp \
+	execFrame.cpp \
+	instructions.cpp \
+	jmachine.cpp \
+	jvcup.cpp \
+	jvInstance.cpp \
+	jvThread.cpp \
+	knownDuals.cpp \
+	machineSupport.cpp \
+	poolManager.cpp \
+	runOptions.cpp \
+	stacks.cpp \
+	stringSupport.cpp \
+	$(FCT_MACHINE_SRCS) \
+	math64bits.cpp \
+	runInfo.cpp
+
+
+FSMSRCS= fsmThread.cpp \
+	fsmSupport.cpp \
+	fsMachine.cpp \
+	stateInstance.cpp \
+	eventQueue.cpp \
+	stateFrame.cpp
+
+
+CPPSRCS=$(CORESRCS) $(FSMSRCS)
+
+TESTSRCS= test.cpp
+
+
+TESTOBJS= $(TESTSRCS:.cpp=.o)
+#HACKLIBS= $(OBJDEST)/PosixThr/lnx_386/posixThrMgr.o \
+	$(OBJDEST)/PosixThr/lnx_386/posixThread.o \
+	$(OBJDEST)/Threader/lnx_386/rawThreads.o \
+	$(OBJDEST)/Threader/lnx_386/synchro.o \
+	$(OBJDEST)/Threader/lnx_386/threadManager.o \
+	$(OBJDEST)/SysVvm/lnx_386/sysvDynLib.o
+
+# Linker Options:
+LIBS= -l$(PROJECT) \
+	-lClassFile \
+	-lPosixThr \
+	-lThreader \
+	-lSysVvm \
+	-l$(PROJECT) \
+	-ldl -lstdc++ -lpthread
+LDFLAGS= -L$(LIB_PATH)
+
+#
+# Compiler Options: 
+# Use machine2 (fct table): -DUSE_FCT_MACHINE
+# Threading: -DNeXT_Thread
+# Debugs: -DDBGLEVEL_1 -DDBGLEVEL_2 -DDBGLEVEL_3 -DDBGLEVEL_MATH -DDEBUG_MEMORY
+DEBUG_LEVELS= -DDBGLEVEL_1 -DDBGLEVEL_3
+CFLAGS= -g $(PLZEN_LEVELS) $(DEBUG_LEVELS) -DSYSV -DPOSIXTHREAD -D_REENTRANT
+INC:= $(INC) -I$(MFRPLZEN)/include
+
+
+all: plzen
+
+lib: $(STATNAMELIB)
+
+plzen: $(TESTOBJS) $(STATNAMELIB)
+	(cd $(OBJ_PATH) && \
+	    $(CC) $(INC) $(CFLAGS) -o $@ $(TESTOBJS) $(LDFLAGS) $(LIBS) \
+	)
+
+$(STATNAMELIB): $(OBJS) fakeSymbols.o
+	( cd $(OBJ_PATH) && \
+	    $(AR) cru $@ $(OBJS) $(HACKLIBS) && \
+	    $(RANLIB) $@ && \
+	    cp $@ $(LIB_PATH) \
+	)
+

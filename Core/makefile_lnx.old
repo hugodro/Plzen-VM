@@ -1,0 +1,101 @@
+#/************************************************
+#* File: makefile.
+#* Desc: Building definitions for the Plzen RunTime.
+
+PROJECT= VM
+
+include $(AKRAPROJ)/geneMake.lnx
+
+
+# Plzen level 1 is implied (Java).
+# level 2 is FSM.
+# level 3 is SQL.
+# level 2_2 is Real-Time (needs 2 to work).
+PLZEN_LEVELS= -DPLZEN_LEVEL_2 
+
+#ARCHDEP_SRCS= nextDynLib.cpp nsThread.cpp nsThrMgr.cpp
+#ARCHDEP_OBJS= nextDynLib.o nsThread.o nsThrMgr.o
+ARCHDEP_SRCS= sysvDynLib.cpp posixThread.cpp posixThrMgr.cpp
+ARCHDEP_OBJS= sysvDynLib.o posixThread.o posixThrMgr.o
+#GUIDEP_SRCS= appkitUtil.m
+#GUIDEP_OBJS= appkitUtil.o
+
+#VPATH= $(ARCHPATH)
+VPATH= src $(OBJ_PATH)
+
+# If the 'USE_FCT_MACHINE' flag is on, these must be defined.
+#FCT_MACHINE_SRCS= machine2.cpp instrMethods.cpp
+#FCT_MACHINE_BIN= machine2.o instrMethods.o
+
+
+RTSRCS= classFileObject.cpp constantPool.cpp \
+		classAttributes.cpp classFile.cpp jmachine.cpp \
+		runOptions.cpp filePath.cpp jvcup.cpp \
+		classManager.cpp stacks.cpp exceptions.cpp execFrame.cpp \
+		machineSupport.cpp synchro.cpp poolManager.cpp \
+		jvInstance.cpp instructions.cpp debugInfo.cpp \
+		dynamicLibrary.cpp $(ARCHDEP_SRCS) \
+		dualWorld.cpp knownDuals.cpp \
+		threadManager.cpp rawThreads.cpp jvThread.cpp \
+		stringSupport.cpp cmLoadLib.cpp \
+		$(FCT_MACHINE_SRCS) \
+		fsmThread.cpp fsmSupport.cpp fsMachine.cpp \
+		stateInstance.cpp eventQueue.cpp \
+		stateFrame.cpp zipStream.cpp math64bits.cpp \
+		runInfo.cpp \
+		$(GUIDEP_SRCS)
+
+PROCSRCS= test.cpp
+
+RTOBJS= classFileObject.o constantPool.o \
+		classAttributes.o classFile.o jmachine.o \
+		runOptions.o filePath.o jvcup.o \
+		classManager.o stacks.o exceptions.o execFrame.o \
+		machineSupport.o synchro.o poolManager.o \
+		jvInstance.o instructions.o debugInfo.o \
+		dynamicLibrary.o \
+		dualWorld.o knownDuals.o \
+		threadManager.o rawThreads.o jvThread.o \
+		stringSupport.o cmLoadLib.o \
+		fsmThread.o fsmSupport.o fsMachine.o \
+		stateInstance.o eventQueue.o \
+		stateFrame.o zipStream.o math64bits.o \
+		runInfo.o \
+		$(FCT_MACHINE_BIN) \
+		$(ARCHDEP_OBJS) \
+		$(GUIDEP_OBJS)
+
+PROCOBJS= $(PROCSRCS:.cpp=.o)
+
+
+# Linker Options:
+# AppKit libs: -lNeXT_s
+LIBS= -lPlzen -ldl -lstdc++ -lpthread
+LDFLAGS= -L.
+
+#LDFLAGS= -L$(AKRAHOME)/DosSupport/objs
+#
+# Compiler Options: 
+# Use machine2 (fct table): -DUSE_FCT_MACHINE
+# Threading: -DNeXT_Thread
+# Debugs: -DDBGLEVEL_1 -DDBGLEVEL_2 -DDBGLEVEL_3 -DDBGLEVEL_MATH -DDEBUG_MEMORY
+DEBUG_LEVELS= -DDBGLEVEL_1 -DDBGLEVEL_3
+#AppKit Flags: -u libsys_s -u libNeXT_s 
+CFLAGS= -g $(PLZEN_LEVELS) $(DEBUG_LEVELS) -DSYSV -DPOSIXTHREAD -D_REENTRANT
+
+
+all: plzen
+
+lib: libPlzen.a
+
+plzen: $(PROCOBJS) libPlzen.a
+	(cd $(OBJ_PATH) && \
+	    $(CC) $(INC) $(CFLAGS) -o $@ $(PROCOBJS) $(LDFLAGS) $(LIBS) \
+	)
+
+libPlzen.a: $(RTOBJS) fakeSymbols.o
+	( cd $(OBJ_PATH) && \
+	    $(AR) cru $@ $(RTOBJS) && \
+	    $(RANLIB) $@ \
+	)
+
